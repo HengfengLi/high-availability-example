@@ -1,0 +1,44 @@
+version: "3"
+services:
+  db:
+    container_name: mysql
+    image: mysql
+    env_file:
+      - .env
+    volumes:
+      - ./data/db_data:/var/lib/mysql
+    ports:
+      - 33306:3306
+    networks:
+      - myapp
+  nginx:
+    container_name: my_nginx
+    image: nginx:1.13.3-alpine
+    ports:
+      - 8000:80
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - tmp_dir:/tmp:ro
+    depends_on:
+      - uwsgi
+    networks:
+      - myapp
+  uwsgi:
+    container_name: my_uwsgi
+    build:
+      context: ./
+      dockerfile: ./uwsgi/Dockerfile
+    command: uwsgi /uwsgi.ini --py-autoreload 3
+    volumes:
+      - ./:/usr/src/app
+      - ./uwsgi/uwsgi.ini:/uwsgi.ini
+      - tmp_dir:/tmp
+    networks:
+      - myapp
+      
+networks:
+  myapp:
+    driver: bridge
+    
+volumes:
+  tmp_dir:
