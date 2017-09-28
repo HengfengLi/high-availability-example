@@ -5,8 +5,6 @@ from flask_restless import APIManager
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-# app.config[
-#     'SQLALCHEMY_DATABASE_URI'] = 'sqlite:////Users/hengfeng/code-lib/docker/ha/test.db'
 app.config[
     'SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:admin@db:3306/myapp'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
