@@ -1,5 +1,13 @@
 version: "3"
 services:
+  proxy:
+    image: haproxy:1.7-alpine
+    ports:
+      - 8000:6301
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    networks:
+      - myapp
   db:
     container_name: mysql
     image: mysql
@@ -11,18 +19,40 @@ services:
       - 33306:3306
     networks:
       - myapp
-  nginx:
-    container_name: my_nginx
-    image: nginx:1.13.3-alpine
-    ports:
-      - 8000:80
+  nginx_master:
+    container_name: my_nginx_master
+    build: 
+        context: ./nginx
+        dockerfile: ./Dockerfile
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - tmp_dir:/tmp:ro
+      - ./nginx/keepalived/master.conf:/etc/keepalived/keepalived.conf
+      - ./nginx/favicon.ico:/var/www/favicon.ico
     depends_on:
       - uwsgi
     networks:
-      - myapp
+      myapp:
+        ipv4_address: 172.20.128.2
+    cap_add: 
+      - NET_ADMIN
+  nginx_slave:
+    container_name: my_nginx_slave
+    build: 
+        context: ./nginx
+        dockerfile: ./Dockerfile
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - tmp_dir:/tmp:ro
+      - ./nginx/keepalived/slave.conf:/etc/keepalived/keepalived.conf
+      - ./nginx/favicon.ico:/var/www/favicon.ico
+    depends_on:
+      - uwsgi
+    networks:
+      myapp:
+        ipv4_address: 172.20.128.3
+    cap_add: 
+      - NET_ADMIN
   uwsgi:
     container_name: my_uwsgi
     build:
@@ -38,7 +68,9 @@ services:
       
 networks:
   myapp:
-    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
     
 volumes:
   tmp_dir:
