@@ -67,7 +67,7 @@ Try to pause `my_nginx_master`:
 $ docker pause my_nginx_master
 ```
 
-Check your log and you will find that my_nginx_slave will do a failover. 
+Check your log and you will find that `my_nginx_slave` will do a failover. 
 
 Now, try to unpause `my_nginx_master`
 
@@ -75,7 +75,7 @@ Now, try to unpause `my_nginx_master`
 $ docker unpause my_nginx_master
 ```
 
-Check your log and you will find that my_nginx_master will take the leader again because it has higher priority. 
+Check your log and you will find that `my_nginx_master` will take the leader again because it has higher priority. 
 
 ### v1.0 - a starting demo
 
