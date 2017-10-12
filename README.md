@@ -53,6 +53,15 @@ Improvements:
 
 ## History
 
+### v3.0 - using nginx as HTTP load balancer
+
+Notes: 
+- I tried to use `docker swarm`, but `cap_add` for virtual IP and keepalived is not supported. So I have to find an alternative way to do this. 
+- For now, I just manually add 3 web app servers and use nginx as load balancer. 
+- Change to use http instead of using socket files. 
+- Need to use `upstream` directives `max_fails` and `fail_timeout`
+- Use `docker stop` to kill a container instead of using `docker pause`.  `docker pause` is not working and it seems that container still can be pinged. 
+
 ### v2.0 - adding failover service for nginx
 
 Four layers: 

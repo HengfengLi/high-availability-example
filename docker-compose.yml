@@ -26,11 +26,8 @@ services:
         dockerfile: ./Dockerfile
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - tmp_dir:/tmp:ro
       - ./nginx/keepalived/master.conf:/etc/keepalived/keepalived.conf
       - ./nginx/favicon.ico:/var/www/favicon.ico
-    depends_on:
-      - uwsgi
     networks:
       myapp:
         ipv4_address: 172.20.128.2
@@ -43,18 +40,15 @@ services:
         dockerfile: ./Dockerfile
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
-      - tmp_dir:/tmp:ro
       - ./nginx/keepalived/slave.conf:/etc/keepalived/keepalived.conf
       - ./nginx/favicon.ico:/var/www/favicon.ico
-    depends_on:
-      - uwsgi
     networks:
       myapp:
         ipv4_address: 172.20.128.3
     cap_add: 
       - NET_ADMIN
-  uwsgi:
-    container_name: my_uwsgi
+  uwsgi_1:
+    container_name: my_uwsgi_1
     build:
       context: ./
       dockerfile: ./uwsgi/Dockerfile
@@ -62,7 +56,28 @@ services:
     volumes:
       - ./:/usr/src/app
       - ./uwsgi/uwsgi.ini:/uwsgi.ini
-      - tmp_dir:/tmp
+    networks:
+      - myapp
+  uwsgi_2:
+    container_name: my_uwsgi_2
+    build:
+      context: ./
+      dockerfile: ./uwsgi/Dockerfile
+    command: uwsgi /uwsgi.ini --py-autoreload 3
+    volumes:
+      - ./:/usr/src/app
+      - ./uwsgi/uwsgi.ini:/uwsgi.ini
+    networks:
+      - myapp
+  uwsgi_3:
+    container_name: my_uwsgi_3
+    build:
+      context: ./
+      dockerfile: ./uwsgi/Dockerfile
+    command: uwsgi /uwsgi.ini --py-autoreload 3
+    volumes:
+      - ./:/usr/src/app
+      - ./uwsgi/uwsgi.ini:/uwsgi.ini
     networks:
       - myapp
       
@@ -71,6 +86,3 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/16
-    
-volumes:
-  tmp_dir:
