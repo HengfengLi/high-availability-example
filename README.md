@@ -43,8 +43,11 @@ So I will follow the architecture from layer 2 to 6 and make each layer become h
 
 Plan: 
 * [DONE] client -> reverse proxy: add another nginx as a backup and failover
-* reverse proxy -> web+service: when a web server dies, nginx will redirect all traffic to other servers
-* web+service -> data-cache: (1) double reads & writes (2) redis-sentinel (3) if cache miss is allowed, put a load balancer in front of a group of cache servers (sharding by keys)
+* [DONE] reverse proxy -> web+service: when a web server dies, nginx will redirect all traffic to other servers
+* [DONE] web+service -> data-cache:
+    1. double reads & writes 
+    2. redis-sentinel [USE]
+    3. if cache miss is allowed, put a load balancer in front of a group of cache servers (sharding by keys)
 * web+service -> data-db: master-slave and multi-db. 
 
 Improvements: 
@@ -52,6 +55,56 @@ Improvements:
 * service discovery and configuration updates
 
 ## History
+
+### v4.0 - adding cache layer
+
+- Add cache layer
+- Use `wrk` to test the improvement of performance
+- Make cache layer highly available
+- Use `docker-compose --scale [SERVICE=NUM]` to run more containers  and needs to remove container_name
+
+Performance Test:
+
+```bash
+wrk -c 100 -t 12 -d 5s http://127.0.0.1:8000/api/property
+```
+
+Without cache:
+
+```bash
+Running 5s test @ http://127.0.0.1:8000/api/property
+  12 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.16s   386.38ms   1.98s    64.42%
+    Req/Sec     7.88      5.47    30.00     76.64%
+  340 requests in 5.08s, 1.30MB read
+  Socket errors: connect 0, read 5, write 0, timeout 14
+Requests/sec:     66.92
+Transfer/sec:    261.72KB
+```
+
+With cache:
+
+```bash
+Running 5s test @ http://127.0.0.1:8000/api/property
+  12 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   407.86ms  235.19ms   1.46s    69.11%
+    Req/Sec    20.84     13.66    90.00     79.84%
+  1168 requests in 5.07s, 3.79MB read
+  Socket errors: connect 0, read 28, write 0, timeout 0
+Requests/sec:    230.58
+Transfer/sec:    765.84KB
+```
+
+With cache, the latency is much less and more requests can be processed.
+
+Actually, we can use `docker-compose scale` command to scale the number of
+containers:
+
+```bash
+docker-compose up --scale uwsgi=3 --scale redis_slave=2 --scale redis_sentinel=3
+```
 
 ### v3.0 - using nginx as HTTP load balancer
 

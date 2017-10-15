@@ -1,6 +1,7 @@
 version: "3"
 services:
   proxy:
+    container_name: proxy
     image: haproxy:1.7-alpine
     ports:
       - 8000:6301
@@ -31,6 +32,8 @@ services:
     networks:
       myapp:
         ipv4_address: 172.20.128.2
+    depends_on:
+      - uwsgi
     cap_add: 
       - NET_ADMIN
   nginx_slave:
@@ -45,10 +48,11 @@ services:
     networks:
       myapp:
         ipv4_address: 172.20.128.3
+    depends_on:
+      - uwsgi
     cap_add: 
       - NET_ADMIN
-  uwsgi_1:
-    container_name: my_uwsgi_1
+  uwsgi:
     build:
       context: ./
       dockerfile: ./uwsgi/Dockerfile
@@ -58,29 +62,24 @@ services:
       - ./uwsgi/uwsgi.ini:/uwsgi.ini
     networks:
       - myapp
-  uwsgi_2:
-    container_name: my_uwsgi_2
-    build:
-      context: ./
-      dockerfile: ./uwsgi/Dockerfile
-    command: uwsgi /uwsgi.ini --py-autoreload 3
-    volumes:
-      - ./:/usr/src/app
-      - ./uwsgi/uwsgi.ini:/uwsgi.ini
+  redis_master:
+    container_name: redis_master
+    image: redis
+    ports:
+      - 6379:6379
     networks:
       - myapp
-  uwsgi_3:
-    container_name: my_uwsgi_3
-    build:
-      context: ./
-      dockerfile: ./uwsgi/Dockerfile
-    command: uwsgi /uwsgi.ini --py-autoreload 3
-    volumes:
-      - ./:/usr/src/app
-      - ./uwsgi/uwsgi.ini:/uwsgi.ini
+  redis_slave:
+    image: redis
+    command: redis-server --slaveof redis_master 6379
     networks:
       - myapp
-      
+  redis_sentinel:
+    build:
+      context: ./redis_sentinel
+      dockerfile: Dockerfile
+    networks:
+      - myapp
 networks:
   myapp:
     ipam:
