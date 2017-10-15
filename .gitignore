@@ -105,3 +105,4 @@ data/*
 .venv/*
 .env
 
+.idea/*
